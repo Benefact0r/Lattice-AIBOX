@@ -7,7 +7,7 @@ const { AnchorProvider, Program, BN, Wallet } = anchor
 import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana/spl-token'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const idlPath = path.resolve(__dirname, '../../program/target/idl/lattice.json')
+const idlPath = path.resolve(__dirname, '../../idl/lattice.json')
 const idl = JSON.parse(readFileSync(idlPath, 'utf8'))
 
 export function buildChainClient({ rpcUrl, keypair, programId }) {
