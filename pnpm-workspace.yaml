@@ -1,6 +1,6 @@
 packages:
   - packages/*
-  - apps/*
+  # apps/web lives in its own repo: github.com/Benefact0r/Lattice-AIBOX-WEB
 
 # Native build scripts that pnpm asks about — these are optional native
 # acceleration addons; safe to skip in our codebase.

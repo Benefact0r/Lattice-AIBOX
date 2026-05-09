@@ -37,3 +37,6 @@ CLAUDE.md
 
 # Stale symlinks / artifacts
 yarn
+
+# Website lives in its own repo (Lattice-AIBOX-WEB) — ignore if accidentally present
+apps/web/
