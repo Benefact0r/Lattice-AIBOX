@@ -1,0 +1,7 @@
+[build]
+builder = "nixpacks"
+buildCommand = "npm install -g pnpm && pnpm install"
+
+[deploy]
+startCommand = "node packages/web-api/src/server.js"
+restartPolicyType = "on_failure"
