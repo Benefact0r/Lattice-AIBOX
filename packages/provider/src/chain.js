@@ -38,6 +38,46 @@ export function deriveStakeVault(authority, programId) {
   )[0]
 }
 
+export function deriveJobEscrow(consumer, jobId, programId) {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from('job'), consumer.toBuffer(), Buffer.from(jobId)],
+    programId
+  )[0]
+}
+
+export function deriveJobVault(consumer, jobId, programId) {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from('job_vault'), consumer.toBuffer(), Buffer.from(jobId)],
+    programId
+  )[0]
+}
+
+export async function settleJob({
+  program,
+  provider,
+  consumer,
+  usdcMint,
+  jobId,
+  resultHash,
+}) {
+  const programId = program.programId
+  const providerTokenAccount = await getAssociatedTokenAddress(usdcMint, provider)
+  const jobEscrow = deriveJobEscrow(consumer, jobId, programId)
+  const jobVault = deriveJobVault(consumer, jobId, programId)
+
+  return program.methods
+    .settleJob(Array.from(jobId), Array.from(resultHash))
+    .accounts({
+      provider,
+      consumer,
+      jobEscrow,
+      jobVault,
+      providerTokenAccount,
+      tokenProgram: TOKEN_PROGRAM_ID,
+    })
+    .rpc()
+}
+
 export async function isRegistered(program, authority) {
   const recordPda = deriveProviderRecord(authority, program.programId)
   const info = await program.provider.connection.getAccountInfo(recordPda)
