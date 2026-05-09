@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Connection, PublicKey } from '@solana/web3.js'
-import { AnchorProvider, Program, Wallet } from '@coral-xyz/anchor'
+import anchor from '@coral-xyz/anchor'
+const { AnchorProvider, Program, Wallet } = anchor
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const idlPath = path.resolve(__dirname, '../../program/target/idl/lattice.json')

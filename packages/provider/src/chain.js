@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Connection, PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY } from '@solana/web3.js'
-import { AnchorProvider, Program, BN, Wallet } from '@coral-xyz/anchor'
+import anchor from '@coral-xyz/anchor'
+const { AnchorProvider, Program, BN, Wallet } = anchor
 import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana/spl-token'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))

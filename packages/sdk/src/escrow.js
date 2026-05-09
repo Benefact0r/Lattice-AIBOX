@@ -1,6 +1,7 @@
 import { randomBytes, createHash } from 'node:crypto'
 import { SystemProgram, SYSVAR_RENT_PUBKEY } from '@solana/web3.js'
-import { BN } from '@coral-xyz/anchor'
+import anchor from '@coral-xyz/anchor'
+const { BN } = anchor
 import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana/spl-token'
 
 import {
