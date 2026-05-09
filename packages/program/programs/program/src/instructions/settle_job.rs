@@ -6,8 +6,10 @@ use crate::{error::LatticeError, state::{JobEscrow, JobState}};
 #[derive(Accounts)]
 #[instruction(job_id: [u8; 32])]
 pub struct SettleJob<'info> {
+    /// Either the consumer (auto-settle on success) or the assigned
+    /// provider (manual settle / claim) may sign.
     #[account(mut)]
-    pub provider: Signer<'info>,
+    pub settler: Signer<'info>,
 
     /// CHECK: used only as a seed for PDA derivation, not signed.
     pub consumer: UncheckedAccount<'info>,
@@ -17,7 +19,10 @@ pub struct SettleJob<'info> {
         seeds = [b"job", consumer.key().as_ref(), job_id.as_ref()],
         bump = job_escrow.bump,
         constraint = job_escrow.state == JobState::Locked @ LatticeError::JobNotLocked,
-        constraint = job_escrow.provider == provider.key() @ LatticeError::UnauthorizedProvider,
+        constraint = (
+            settler.key() == job_escrow.consumer
+            || settler.key() == job_escrow.provider
+        ) @ LatticeError::UnauthorizedSettler,
     )]
     pub job_escrow: Account<'info, JobEscrow>,
 
@@ -28,9 +33,11 @@ pub struct SettleJob<'info> {
     )]
     pub job_vault: Account<'info, TokenAccount>,
 
+    /// Funds always go to the assigned provider's USDC account, regardless
+    /// of who signed. This is what makes consumer-initiated settle safe.
     #[account(
         mut,
-        constraint = provider_token_account.owner == provider.key()
+        constraint = provider_token_account.owner == job_escrow.provider @ LatticeError::UnauthorizedProvider
     )]
     pub provider_token_account: Account<'info, TokenAccount>,
 
@@ -61,6 +68,11 @@ pub fn handler(ctx: Context<SettleJob>, job_id: [u8; 32], result_hash: [u8; 32])
     escrow.result_hash = Some(result_hash);
     escrow.state = JobState::Settled;
 
-    msg!("Job settled — provider paid: {}", amount);
+    msg!(
+        "Job settled by {} — provider {} paid: {}",
+        ctx.accounts.settler.key(),
+        escrow.provider,
+        amount
+    );
     Ok(())
 }

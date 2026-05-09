@@ -13,7 +13,9 @@ import {
   buildChainClient,
   isRegistered,
   registerProvider,
+  updateProvider,
   deregisterProvider,
+  readOnChainQvacPubKey,
 } from './chain.js'
 
 const seed = process.argv[2] || null
@@ -45,10 +47,10 @@ const { program } = buildChainClient({
 })
 
 const authority = config.keypair.publicKey
-const alreadyRegistered = await isRegistered(program, authority)
+const onChainQvacKey = await readOnChainQvacPubKey(program, authority)
 
 let registrationSig = null
-if (!alreadyRegistered) {
+if (!onChainQvacKey) {
   console.log('\nNot yet registered on-chain — staking and registering...')
   registrationSig = await registerProvider({
     program,
@@ -60,8 +62,18 @@ if (!alreadyRegistered) {
     stakeAmount: config.stakeAmount,
   })
   console.log(`Registration tx: ${registrationSig}`)
+} else if (onChainQvacKey !== qvac.publicKey) {
+  console.log(`\nOn-chain QVAC pubkey is stale (${onChainQvacKey.slice(0, 16)}…) — rotating to current pubkey...`)
+  registrationSig = await updateProvider({
+    program,
+    authority,
+    qvacPubKeyHex: qvac.publicKey,
+    models: ['llama-3.2-1b'],
+    pricePer1k: config.pricePer1k,
+  })
+  console.log(`Update tx: ${registrationSig}`)
 } else {
-  console.log('\nProvider already registered on-chain — skipping stake.')
+  console.log('\nProvider already registered on-chain with current QVAC pubkey — skipping stake.')
 }
 
 console.log('\n=====================================================')

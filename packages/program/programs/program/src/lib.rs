@@ -33,6 +33,15 @@ pub mod lattice {
         instructions::deregister_provider::handler(ctx)
     }
 
+    pub fn update_provider(
+        ctx: Context<UpdateProvider>,
+        qvac_pubkey: [u8; 32],
+        models: Vec<[u8; 32]>,
+        price_per_1k: u64,
+    ) -> Result<()> {
+        instructions::update_provider::handler(ctx, qvac_pubkey, models, price_per_1k)
+    }
+
     pub fn lock_job(
         ctx: Context<LockJob>,
         job_id: [u8; 32],

@@ -26,8 +26,10 @@ pub struct RegisterProvider<'info> {
     )]
     pub provider_token_account: Account<'info, TokenAccount>,
 
+    /// `init_if_needed` so a provider can re-register after deregistering
+    /// without orphaning the SPL token account (which deregister doesn't close).
     #[account(
-        init,
+        init_if_needed,
         payer = authority,
         seeds = [b"stake_vault", authority.key().as_ref()],
         bump,

@@ -52,6 +52,10 @@ export function deriveJobVault(consumer, jobId, programId) {
   )[0]
 }
 
+/**
+ * Provider-side manual settle (e.g. claim after consumer no-show).
+ * Caller's wallet (the provider authority) is the signer.
+ */
 export async function settleJob({
   program,
   provider,
@@ -68,7 +72,7 @@ export async function settleJob({
   return program.methods
     .settleJob(Array.from(jobId), Array.from(resultHash))
     .accounts({
-      provider,
+      settler: provider,
       consumer,
       jobEscrow,
       jobVault,
@@ -82,6 +86,21 @@ export async function isRegistered(program, authority) {
   const recordPda = deriveProviderRecord(authority, program.programId)
   const info = await program.provider.connection.getAccountInfo(recordPda)
   return info !== null
+}
+
+/**
+ * Returns the on-chain QVAC pubkey (hex) for this provider, or null if
+ * not registered. Used at boot to detect a drifted identity (e.g. provider
+ * restarted on a new machine with a new keypair).
+ */
+export async function readOnChainQvacPubKey(program, authority) {
+  const recordPda = deriveProviderRecord(authority, program.programId)
+  try {
+    const acct = await program.account.providerRecord.fetch(recordPda)
+    return Buffer.from(acct.qvacPubkey).toString('hex')
+  } catch {
+    return null
+  }
 }
 
 export async function registerProvider({
@@ -116,6 +135,31 @@ export async function registerProvider({
       tokenProgram: TOKEN_PROGRAM_ID,
       systemProgram: SystemProgram.programId,
       rent: SYSVAR_RENT_PUBKEY,
+    })
+    .rpc()
+}
+
+export async function updateProvider({
+  program,
+  authority,
+  qvacPubKeyHex,
+  models,
+  pricePer1k,
+}) {
+  const qvacBytes = Buffer.from(qvacPubKeyHex, 'hex')
+  if (qvacBytes.length !== 32) throw new Error('QVAC pubkey must be 32 bytes (64 hex chars)')
+
+  const providerRecord = deriveProviderRecord(authority, program.programId)
+
+  return program.methods
+    .updateProvider(
+      Array.from(qvacBytes),
+      models.map((m) => Array.from(Buffer.from(m.padEnd(32, '\0'), 'utf8').subarray(0, 32))),
+      new BN(pricePer1k.toString())
+    )
+    .accounts({
+      authority,
+      providerRecord,
     })
     .rpc()
 }

@@ -12,6 +12,8 @@ pub enum LatticeError {
     JobNotLocked,
     #[msg("Only the assigned provider can settle this job")]
     UnauthorizedProvider,
+    #[msg("Only the consumer or assigned provider can settle this job")]
+    UnauthorizedSettler,
     #[msg("Only the consumer can slash this job")]
     UnauthorizedConsumer,
     #[msg("Insufficient stake to cover slash")]
