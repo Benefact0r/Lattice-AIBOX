@@ -12,7 +12,7 @@ lattice = "4yR7v2c23wrxgFzcbtocvMvVxucYQHGfSWczNW3FxV7T"
 lattice = "4yR7v2c23wrxgFzcbtocvMvVxucYQHGfSWczNW3FxV7T"
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
