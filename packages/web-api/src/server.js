@@ -82,7 +82,10 @@ app.post('/api/infer/stream', async (req, res) => {
   res.setHeader('Connection', 'keep-alive')
   res.flushHeaders()
 
-  const send = (obj) => res.write(`data: ${JSON.stringify(obj)}\n\n`)
+  let clientGone = false
+  req.on('close', () => { clientGone = true })
+
+  const send = (obj) => { if (!clientGone) res.write(`data: ${JSON.stringify(obj)}\n\n`) }
 
   const t0 = Date.now()
   let inference = null
@@ -111,6 +114,7 @@ app.post('/api/infer/stream', async (req, res) => {
 
     let fullText = ''
     for await (const token of inference.tokenStream) {
+      if (clientGone) break
       fullText += token
       send({ type: 'token', text: token })
     }
