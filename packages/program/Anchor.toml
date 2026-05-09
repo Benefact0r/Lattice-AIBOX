@@ -6,7 +6,10 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-program = "CgZjVR1SqQFn6SQfSpxVd7hTGR7HQix3cCHuWS8SnQiH"
+lattice = "CgZjVR1SqQFn6SQfSpxVd7hTGR7HQix3cCHuWS8SnQiH"
+
+[programs.devnet]
+lattice = "CgZjVR1SqQFn6SQfSpxVd7hTGR7HQix3cCHuWS8SnQiH"
 
 [provider]
 cluster = "localnet"
