@@ -5,11 +5,11 @@ package_manager = "yarn"
 resolution = true
 skip-lint = false
 
-[programs.localnet]
-lattice = "CgZjVR1SqQFn6SQfSpxVd7hTGR7HQix3cCHuWS8SnQiH"
-
 [programs.devnet]
-lattice = "CgZjVR1SqQFn6SQfSpxVd7hTGR7HQix3cCHuWS8SnQiH"
+lattice = "4yR7v2c23wrxgFzcbtocvMvVxucYQHGfSWczNW3FxV7T"
+
+[programs.localnet]
+lattice = "4yR7v2c23wrxgFzcbtocvMvVxucYQHGfSWczNW3FxV7T"
 
 [provider]
 cluster = "localnet"

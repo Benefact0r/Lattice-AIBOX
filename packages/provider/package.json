@@ -9,7 +9,17 @@
     "start": "node src/index.js"
   },
   "dependencies": {
+    "@coral-xyz/anchor": "^0.32.1",
     "@qvac/sdk": "^0.10.2",
-    "bare-runtime-linux-x64": "^1.28.5"
+    "@solana/spl-token": "^0.4.14",
+    "@solana/web3.js": "^1.98.4",
+    "dotenv": "^17.4.2"
+  },
+  "optionalDependencies": {
+    "bare-runtime-darwin-arm64": "^1.28.5",
+    "bare-runtime-darwin-x64": "^1.28.5",
+    "bare-runtime-linux-arm64": "^1.28.5",
+    "bare-runtime-linux-x64": "^1.28.5",
+    "bare-runtime-win32-x64": "^1.28.5"
   }
 }

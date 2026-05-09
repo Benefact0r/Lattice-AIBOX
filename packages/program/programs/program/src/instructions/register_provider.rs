@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Token, TokenAccount, Transfer};
+use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 
 use crate::{error::LatticeError, state::ProviderRecord};
 
@@ -17,21 +17,28 @@ pub struct RegisterProvider<'info> {
     )]
     pub provider_record: Account<'info, ProviderRecord>,
 
+    pub usdc_mint: Account<'info, Mint>,
+
     #[account(
         mut,
-        constraint = provider_token_account.owner == authority.key()
+        constraint = provider_token_account.owner == authority.key(),
+        constraint = provider_token_account.mint == usdc_mint.key()
     )]
     pub provider_token_account: Account<'info, TokenAccount>,
 
     #[account(
-        mut,
+        init,
+        payer = authority,
         seeds = [b"stake_vault", authority.key().as_ref()],
-        bump
+        bump,
+        token::mint = usdc_mint,
+        token::authority = stake_vault,
     )]
     pub stake_vault: Account<'info, TokenAccount>,
 
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
 pub fn handler(

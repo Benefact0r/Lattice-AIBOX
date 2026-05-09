@@ -30,6 +30,7 @@ Thumbs.db
 
 # Local Claude Code context (per-device, not for repo)
 CLAUDE.md
+*CLAUDE.md
 
 # Claude Code memory (local only)
 .claude/

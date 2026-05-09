@@ -1,3 +1,10 @@
 packages:
   - packages/*
   - apps/*
+
+# Native build scripts that pnpm asks about — these are optional native
+# acceleration addons; safe to skip in our codebase.
+ignoredBuiltDependencies:
+  - bufferutil
+  - utf-8-validate
+  - bigint-buffer

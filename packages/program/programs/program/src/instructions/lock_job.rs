@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Token, TokenAccount, Transfer};
+use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 
 use crate::{error::LatticeError, state::{JobEscrow, JobState, ProviderRecord}};
 
@@ -25,21 +25,28 @@ pub struct LockJob<'info> {
     )]
     pub job_escrow: Account<'info, JobEscrow>,
 
+    pub usdc_mint: Account<'info, Mint>,
+
     #[account(
         mut,
-        constraint = consumer_token_account.owner == consumer.key()
+        constraint = consumer_token_account.owner == consumer.key(),
+        constraint = consumer_token_account.mint == usdc_mint.key()
     )]
     pub consumer_token_account: Account<'info, TokenAccount>,
 
     #[account(
-        mut,
+        init,
+        payer = consumer,
         seeds = [b"job_vault", consumer.key().as_ref(), job_id.as_ref()],
-        bump
+        bump,
+        token::mint = usdc_mint,
+        token::authority = job_vault,
     )]
     pub job_vault: Account<'info, TokenAccount>,
 
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
 pub fn handler(ctx: Context<LockJob>, _job_id: [u8; 32], amount: u64) -> Result<()> {

@@ -11,7 +11,7 @@ pub use instructions::*;
 pub use state::*;
 pub use error::*;
 
-declare_id!("CgZjVR1SqQFn6SQfSpxVd7hTGR7HQix3cCHuWS8SnQiH");
+declare_id!("4yR7v2c23wrxgFzcbtocvMvVxucYQHGfSWczNW3FxV7T");
 
 // NOTE: module is named `lattice`, NOT `program` — using `program` conflicts
 // with `solana_program::program` that anchor's prelude brings into scope.
