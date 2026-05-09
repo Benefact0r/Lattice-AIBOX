@@ -1,5 +1,11 @@
 {
   "name": "lattice",
   "version": "0.0.1",
-  "private": true
+  "private": true,
+  "pnpm": {
+    "supportedArchitectures": {
+      "os": ["linux", "darwin"],
+      "cpu": ["x64", "arm64"]
+    }
+  }
 }
