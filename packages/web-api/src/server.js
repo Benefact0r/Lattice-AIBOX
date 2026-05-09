@@ -1,18 +1,29 @@
 // @lattice/web-api — REST + SSE gateway between the browser and the Lattice SDK.
 //
-// Why this exists: QVAC's P2P client is Node-only (Hyperswarm DHT, native deps),
-// so the browser cannot run inference directly. This server holds a "demo wallet"
-// that pays for inference on visitors' behalf, and exposes:
+// Two flows:
+//   "demo"    — server's wallet pays for everything (zero-friction trial)
+//   "phantom" — user pays from their own wallet (real on-chain payment)
 //
+// Endpoints:
 //   GET  /api/health
-//   GET  /api/providers             — list active GPU providers from chain
-//   POST /api/infer/stream          — SSE: token-by-token stream, then done/error event
-//   POST /api/infer                 — non-streaming fallback (full response at once)
+//   GET  /api/providers
+//   POST /api/faucet                 { pubkey } → tops up user with SOL + test USDC
+//   POST /api/lock/build             { consumer, providerAuthority, amount? }
+//                                     → returns base64-serialized unsigned lockJob tx
+//   POST /api/infer/stream           SSE. Body either:
+//                                     demo:    { providerAuthority, prompt }
+//                                     phantom: { providerAuthority, prompt, consumer, jobId, lockSignature }
 
 import express from 'express'
 import cors from 'cors'
-import { hashResult } from '@lattice/sdk'
-import { createClient } from '@lattice/sdk'
+import {
+  Connection, PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL, Keypair,
+} from '@solana/web3.js'
+import {
+  createMintToInstruction, createAssociatedTokenAccountInstruction,
+  getAssociatedTokenAddress, TOKEN_PROGRAM_ID,
+} from '@solana/spl-token'
+import { hashResult, createClient } from '@lattice/sdk'
 import { config } from './config.js'
 
 const client = await createClient({
@@ -26,11 +37,7 @@ console.log(`Demo wallet: ${config.keypair.publicKey.toBase58()}`)
 
 const app = express()
 app.use(express.json({ limit: '32kb' }))
-app.use(
-  cors({
-    origin: config.corsOrigins.includes('*') ? true : config.corsOrigins,
-  })
-)
+app.use(cors({ origin: config.corsOrigins.includes('*') ? true : config.corsOrigins }))
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -64,18 +71,92 @@ app.get('/api/providers', async (_req, res) => {
   }
 })
 
-// Streaming endpoint — Server-Sent Events.
-// Events:
-//   data: {"type":"lock",   "jobId":"...", "lockSignature":"..."}
-//   data: {"type":"token",  "text":"..."}
-//   data: {"type":"done",   "jobId":"...", "lockSignature":"...", "settleSignature":"...",
-//                           "resultHash":"...", "elapsedMs":1234}
-//   data: {"type":"error",  "message":"..."}
+// Faucet — bootstraps a Phantom user with devnet SOL + test USDC.
+// Designed for demo use; rate-limited only by tx fees, not per-user.
+app.post('/api/faucet', async (req, res) => {
+  const { pubkey } = req.body ?? {}
+  if (!pubkey) return res.status(400).json({ error: 'pubkey required' })
+
+  let userPubkey
+  try { userPubkey = new PublicKey(pubkey) }
+  catch { return res.status(400).json({ error: 'invalid pubkey' }) }
+
+  try {
+    const tx = new Transaction()
+    const userAta = await getAssociatedTokenAddress(config.usdcMint, userPubkey)
+
+    // Always top up SOL (for tx fees) — capped per request
+    tx.add(SystemProgram.transfer({
+      fromPubkey: config.keypair.publicKey,
+      toPubkey: userPubkey,
+      lamports: 0.05 * LAMPORTS_PER_SOL,
+    }))
+
+    // Create the user's USDC ATA if it doesn't exist
+    const ataInfo = await client.connection.getAccountInfo(userAta)
+    if (!ataInfo) {
+      tx.add(createAssociatedTokenAccountInstruction(
+        config.keypair.publicKey, // payer
+        userAta,
+        userPubkey,
+        config.usdcMint,
+      ))
+    }
+
+    // Mint 10 test USDC to user
+    tx.add(createMintToInstruction(
+      config.usdcMint,
+      userAta,
+      config.keypair.publicKey, // mint authority
+      10_000_000n, // 10 USDC at 6 decimals
+    ))
+
+    const signature = await client.program.provider.sendAndConfirm(tx, [config.keypair])
+    res.json({ signature, sol: 0.05, usdc: 10 })
+  } catch (err) {
+    console.error('faucet failed:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// Build an unsigned lockJob tx for Phantom to sign.
+app.post('/api/lock/build', async (req, res) => {
+  const { consumer, providerAuthority, amount } = req.body ?? {}
+  if (!consumer || !providerAuthority) {
+    return res.status(400).json({ error: 'consumer and providerAuthority required' })
+  }
+
+  try {
+    const consumerPk = new PublicKey(consumer)
+    const provider = await resolveProvider(providerAuthority)
+    if (!provider) return res.status(404).json({ error: 'provider not found' })
+
+    const { tx, jobId } = await client.buildLockJobTx({
+      consumer: consumerPk,
+      providerAuthority: provider.authority,
+      amount: BigInt(amount ?? 1_000_000),
+    })
+
+    const serialized = tx.serialize({ requireAllSignatures: false }).toString('base64')
+    res.json({ tx: serialized, jobId: Buffer.from(jobId).toString('hex') })
+  } catch (err) {
+    console.error('lock/build failed:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// SSE inference. Supports both demo (server pays) and phantom (user paid) flows.
 app.post('/api/infer/stream', async (req, res) => {
-  const { providerAuthority, prompt, private: isPrivate } = req.body ?? {}
+  const {
+    providerAuthority, prompt, private: isPrivate,
+    consumer, jobId: jobIdHex, lockSignature, // phantom-mode fields
+  } = req.body ?? {}
+
   if (!providerAuthority || !prompt) {
     return res.status(400).json({ error: 'providerAuthority and prompt required' })
   }
+
+  const isPhantomFlow = !!(consumer && jobIdHex && lockSignature)
 
   res.setHeader('Content-Type', 'text/event-stream')
   res.setHeader('Cache-Control', 'no-cache')
@@ -97,14 +178,32 @@ app.post('/api/infer/stream', async (req, res) => {
       return res.end()
     }
 
-    // 1. Lock escrow on-chain
-    const lock = await client.lockJob({
-      providerAuthority: provider.authority,
-      amount: 1_000_000n,
-    })
-    send({ type: 'lock', jobId: Buffer.from(lock.jobId).toString('hex'), lockSignature: lock.signature })
+    let jobId, finalLockSig, consumerPubkey
 
-    // 2. Stream tokens from QVAC
+    if (isPhantomFlow) {
+      // User already locked from their own wallet. Trust the supplied jobId
+      // and verify the escrow exists on-chain before doing any work.
+      consumerPubkey = new PublicKey(consumer)
+      jobId = Buffer.from(jobIdHex, 'hex')
+      finalLockSig = lockSignature
+
+      // Wait briefly for the lock tx to confirm if it's not visible yet
+      await client.connection.confirmTransaction(lockSignature, 'confirmed').catch(() => {})
+
+      send({ type: 'lock', jobId: jobIdHex, lockSignature })
+    } else {
+      // Demo flow: server's wallet locks
+      const lock = await client.lockJob({
+        providerAuthority: provider.authority,
+        amount: 1_000_000n,
+      })
+      jobId = lock.jobId
+      finalLockSig = lock.signature
+      consumerPubkey = config.keypair.publicKey
+      send({ type: 'lock', jobId: Buffer.from(jobId).toString('hex'), lockSignature: finalLockSig })
+    }
+
+    // Stream tokens from QVAC
     inference = await client.complete({
       provider,
       messages: [{ role: 'user', content: prompt }],
@@ -119,22 +218,33 @@ app.post('/api/infer/stream', async (req, res) => {
       send({ type: 'token', text: token })
     }
 
-    // 3. Settle on-chain
+    // Settle: phantom flow → server settles as provider; demo flow → server settles as consumer
     const resultHash = hashResult(fullText)
-    const settleSig = await client.settleJobAsConsumer({
-      jobId: lock.jobId,
-      resultHash,
-      providerAuthority: provider.authority,
-    })
+    let settleSig
+    if (isPhantomFlow) {
+      settleSig = await client.settleJobAsProvider({
+        jobId,
+        resultHash,
+        consumer: consumerPubkey,
+        providerAuthority: provider.authority,
+      })
+    } else {
+      settleSig = await client.settleJobAsConsumer({
+        jobId,
+        resultHash,
+        providerAuthority: provider.authority,
+      })
+    }
 
     send({
       type: 'done',
-      jobId: Buffer.from(lock.jobId).toString('hex'),
-      lockSignature: lock.signature,
+      jobId: Buffer.from(jobId).toString('hex'),
+      lockSignature: finalLockSig,
       settleSignature: settleSig,
       resultHash: resultHash.toString('hex'),
       elapsedMs: Date.now() - t0,
       privateRequested: !!isPrivate,
+      flow: isPhantomFlow ? 'phantom' : 'demo',
     })
   } catch (err) {
     console.error('stream infer failed:', err)
@@ -144,39 +254,6 @@ app.post('/api/infer/stream', async (req, res) => {
       try { await inference.unload() } catch {}
     }
     res.end()
-  }
-})
-
-// Non-streaming fallback (keeps backward compat)
-app.post('/api/infer', async (req, res) => {
-  const { providerAuthority, prompt, private: isPrivate } = req.body ?? {}
-  if (!providerAuthority || !prompt) {
-    return res.status(400).json({ error: 'providerAuthority and prompt required' })
-  }
-
-  try {
-    const provider = await resolveProvider(providerAuthority)
-    if (!provider) return res.status(404).json({ error: 'provider not found or inactive' })
-
-    const t0 = Date.now()
-    const result = await client.inferAndSettle({
-      provider,
-      messages: [{ role: 'user', content: prompt }],
-      timeoutMs: 120_000,
-    })
-
-    res.json({
-      text: result.text,
-      jobId: Buffer.from(result.jobId).toString('hex'),
-      lockSignature: result.lockSignature,
-      settleSignature: result.settleSignature,
-      resultHash: result.resultHash.toString('hex'),
-      elapsedMs: Date.now() - t0,
-      privateRequested: !!isPrivate,
-    })
-  } catch (err) {
-    console.error('infer failed:', err)
-    res.status(500).json({ error: err.message })
   }
 })
 

@@ -10,11 +10,11 @@
 
 import { buildChainClient } from './chain.js'
 import { listProviders, pickCheapest } from './registry.js'
-import { lockJob, readJobEscrow, newJobId, settleJobAsConsumer, hashResult } from './escrow.js'
+import { lockJob, readJobEscrow, newJobId, settleJobAsConsumer, settleJobAsProvider, buildLockJobTx, hashResult } from './escrow.js'
 import { complete, MODELS } from './inference.js'
 
 export { listProviders, pickCheapest } from './registry.js'
-export { lockJob, readJobEscrow, newJobId, settleJobAsConsumer, hashResult } from './escrow.js'
+export { lockJob, readJobEscrow, newJobId, settleJobAsConsumer, settleJobAsProvider, buildLockJobTx, hashResult } from './escrow.js'
 export { complete, MODELS } from './inference.js'
 export { loadConfigFromEnv } from './config.js'
 
@@ -118,6 +118,10 @@ export async function createClient(config) {
     readJobEscrow: (jobEscrow) => readJobEscrow(program, jobEscrow),
     settleJobAsConsumer: ({ jobId, resultHash, providerAuthority }) =>
       settleJobAsConsumer({ program, consumer, usdcMint, jobId, resultHash, providerAuthority }),
+    settleJobAsProvider: ({ jobId, resultHash, consumer: c, providerAuthority }) =>
+      settleJobAsProvider({ program, providerAuthority: providerAuthority ?? consumer, consumer: c, usdcMint, jobId, resultHash }),
+    buildLockJobTx: ({ consumer: c, providerAuthority, amount, jobId }) =>
+      buildLockJobTx({ program, consumer: c, providerAuthority, usdcMint, amount, jobId }),
     complete: ({ provider, model, messages, stream, timeoutMs, fallbackToLocal }) =>
       complete({
         providerQvacPubKey: provider.qvacPubKey,

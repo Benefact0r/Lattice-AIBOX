@@ -56,6 +56,78 @@ export async function readJobEscrow(program, jobEscrow) {
 }
 
 /**
+ * Build an unsigned `lock_job` transaction for the consumer to sign with
+ * their own wallet (e.g. Phantom). Returns the Transaction with the
+ * recent blockhash + fee payer set, ready to serialize and send.
+ */
+export async function buildLockJobTx({
+  program,
+  consumer,
+  providerAuthority,
+  usdcMint,
+  amount,
+  jobId = newJobId(),
+}) {
+  const programId = program.programId
+  const consumerTokenAccount = await getAssociatedTokenAddress(usdcMint, consumer)
+  const providerRecord = deriveProviderRecord(providerAuthority, programId)
+  const jobEscrow = deriveJobEscrow(consumer, jobId, programId)
+  const jobVault = deriveJobVault(consumer, jobId, programId)
+
+  const tx = await program.methods
+    .lockJob(Array.from(jobId), new BN(amount.toString()))
+    .accounts({
+      consumer,
+      providerRecord,
+      jobEscrow,
+      usdcMint,
+      consumerTokenAccount,
+      jobVault,
+      tokenProgram: TOKEN_PROGRAM_ID,
+      systemProgram: SystemProgram.programId,
+      rent: SYSVAR_RENT_PUBKEY,
+    })
+    .transaction()
+
+  const { blockhash } = await program.provider.connection.getLatestBlockhash()
+  tx.recentBlockhash = blockhash
+  tx.feePayer = consumer
+
+  return { tx, jobId, jobEscrow, jobVault }
+}
+
+/**
+ * Provider-initiated settle. Used by the server when the consumer paid
+ * for the lock with their own wallet (Phantom flow) — the server settles
+ * to itself using its own keypair, no second user signature required.
+ */
+export async function settleJobAsProvider({
+  program,
+  providerAuthority,
+  consumer,
+  usdcMint,
+  jobId,
+  resultHash,
+}) {
+  const programId = program.programId
+  const jobEscrow = deriveJobEscrow(consumer, jobId, programId)
+  const jobVault = deriveJobVault(consumer, jobId, programId)
+  const providerTokenAccount = await getAssociatedTokenAddress(usdcMint, providerAuthority)
+
+  return program.methods
+    .settleJob(Array.from(jobId), Array.from(resultHash))
+    .accounts({
+      settler: providerAuthority,
+      consumer,
+      jobEscrow,
+      jobVault,
+      providerTokenAccount,
+      tokenProgram: TOKEN_PROGRAM_ID,
+    })
+    .rpc()
+}
+
+/**
  * Consumer-initiated settle. Releases escrowed USDC to the provider's
  * associated token account. The consumer's wallet (the program's anchor
  * provider) is the signer — no provider keypair required.
