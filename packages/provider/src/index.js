@@ -7,7 +7,7 @@
 //
 // Solana config is read from packages/provider/.env.local (see .env.example).
 
-import { startQVACProvider } from '@qvac/sdk'
+import { startQVACProvider, loadModel, LLAMA_3_2_1B_INST_Q4_0 } from '@qvac/sdk'
 import { config } from './config.js'
 import {
   buildChainClient,
@@ -74,6 +74,29 @@ if (!onChainQvacKey) {
   console.log(`Update tx: ${registrationSig}`)
 } else {
   console.log('\nProvider already registered on-chain with current QVAC pubkey — skipping stake.')
+}
+
+// Pre-warm the model into the local QVAC worker. Without this, the first
+// delegated request triggers a 30+s download/load and the consumer's DHT
+// connection idle-timeouts before the model is ready (PEER_NOT_FOUND). With
+// it, the model is cached in worker memory and delegated requests reuse it.
+if (process.env.SKIP_PREWARM !== 'true') {
+  console.log('\nPre-warming model (llama-3.2-1b) into QVAC worker cache...')
+  const t0 = Date.now()
+  try {
+    const modelId = await loadModel({
+      modelSrc: LLAMA_3_2_1B_INST_Q4_0,
+      modelType: 'llm',
+      onProgress: (p) => process.stdout.write(`  ${p.percentage.toFixed(0)}% `),
+    })
+    // Note: we deliberately don't drive a completion here. The first
+    // delegated request will pay a small weight-paging cost, but pre-running
+    // a completion locally leaves the model in a half-consumed state that
+    // breaks subsequent delegated streams.
+    console.log(`\n  Model warm in ${Date.now() - t0}ms (modelId ${modelId})`)
+  } catch (err) {
+    console.warn(`  Pre-warm failed: ${err.message} — first request will pay the cold-start cost.`)
+  }
 }
 
 console.log('\n=====================================================')
