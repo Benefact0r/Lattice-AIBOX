@@ -8,5 +8,8 @@
     "dev": "node src/index.js",
     "start": "node src/index.js"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@qvac/sdk": "^0.10.2",
+    "bare-runtime-linux-x64": "^1.28.5"
+  }
 }
