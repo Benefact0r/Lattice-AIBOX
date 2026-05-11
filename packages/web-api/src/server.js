@@ -23,7 +23,7 @@ import {
   createMintToInstruction, createAssociatedTokenAccountInstruction,
   getAssociatedTokenAddress, TOKEN_PROGRAM_ID,
 } from '@solana/spl-token'
-import { hashResult, createClient } from '@lattice/sdk'
+import { hashResult, createClient } from '@lattice-sdk-publish/sdk'
 import { config } from './config.js'
 
 const client = await createClient({

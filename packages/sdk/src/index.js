@@ -1,7 +1,7 @@
-// @lattice/sdk — public API for consumers.
+// @lattice-sdk-publish/sdk — public API for consumers.
 //
 // Quick start:
-//   import { createClient } from '@lattice/sdk'
+//   import { createClient } from '@lattice-sdk-publish/sdk'
 //   const client = await createClient({ keypair, rpcUrl, usdcMint, programId })
 //   const providers = await client.listProviders({ model: 'llama-3.2-1b' })
 //   const { text } = await client.inferAndSettle({

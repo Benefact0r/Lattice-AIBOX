@@ -1,12 +1,35 @@
 {
-  "name": "@lattice/provider",
-  "version": "0.0.1",
-  "private": true,
+  "name": "@lattice-sdk-publish/provider",
+  "version": "0.1.0",
+  "description": "Lattice — GPU provider node for the decentralized AI inference marketplace on Solana.",
   "type": "module",
   "main": "src/index.js",
+  "files": [
+    "src"
+  ],
   "scripts": {
     "dev": "node src/index.js",
     "start": "node src/index.js"
+  },
+  "keywords": [
+    "lattice",
+    "ai",
+    "inference",
+    "solana",
+    "gpu",
+    "provider",
+    "qvac",
+    "decentralized",
+    "web3"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Benefact0r/Lattice-AIBOX.git"
+  },
+  "homepage": "https://lattice-aibox-web.vercel.app",
+  "publishConfig": {
+    "access": "public"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.32.1",

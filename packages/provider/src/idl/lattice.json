@@ -1,0 +1,926 @@
+{
+  "address": "4yR7v2c23wrxgFzcbtocvMvVxucYQHGfSWczNW3FxV7T",
+  "metadata": {
+    "name": "lattice",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Lattice — decentralized AI inference marketplace"
+  },
+  "instructions": [
+    {
+      "name": "deregister_provider",
+      "discriminator": [
+        155,
+        165,
+        230,
+        205,
+        237,
+        143,
+        134,
+        112
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "provider_record"
+          ]
+        },
+        {
+          "name": "provider_record",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  118,
+                  105,
+                  100,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "provider_token_account",
+          "writable": true
+        },
+        {
+          "name": "stake_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  107,
+                  101,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "lock_job",
+      "discriminator": [
+        77,
+        154,
+        182,
+        89,
+        5,
+        162,
+        27,
+        120
+      ],
+      "accounts": [
+        {
+          "name": "consumer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "provider_record",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  118,
+                  105,
+                  100,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "provider_record.authority",
+                "account": "ProviderRecord"
+              }
+            ]
+          }
+        },
+        {
+          "name": "job_escrow",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  106,
+                  111,
+                  98
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "consumer"
+              },
+              {
+                "kind": "arg",
+                "path": "job_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "usdc_mint"
+        },
+        {
+          "name": "consumer_token_account",
+          "writable": true
+        },
+        {
+          "name": "job_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  106,
+                  111,
+                  98,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "consumer"
+              },
+              {
+                "kind": "arg",
+                "path": "job_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "job_id",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "register_provider",
+      "discriminator": [
+        254,
+        209,
+        54,
+        184,
+        46,
+        197,
+        109,
+        78
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "provider_record",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  118,
+                  105,
+                  100,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "usdc_mint"
+        },
+        {
+          "name": "provider_token_account",
+          "writable": true
+        },
+        {
+          "name": "stake_vault",
+          "docs": [
+            "`init_if_needed` so a provider can re-register after deregistering",
+            "without orphaning the SPL token account (which deregister doesn't close)."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  107,
+                  101,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "qvac_pubkey",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "models",
+          "type": {
+            "vec": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        },
+        {
+          "name": "price_per_1k",
+          "type": "u64"
+        },
+        {
+          "name": "stake_amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "settle_job",
+      "discriminator": [
+        246,
+        155,
+        221,
+        34,
+        168,
+        70,
+        173,
+        72
+      ],
+      "accounts": [
+        {
+          "name": "settler",
+          "docs": [
+            "Either the consumer (auto-settle on success) or the assigned",
+            "provider (manual settle / claim) may sign."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "consumer"
+        },
+        {
+          "name": "job_escrow",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  106,
+                  111,
+                  98
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "consumer"
+              },
+              {
+                "kind": "arg",
+                "path": "job_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "job_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  106,
+                  111,
+                  98,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "consumer"
+              },
+              {
+                "kind": "arg",
+                "path": "job_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "provider_token_account",
+          "docs": [
+            "Funds always go to the assigned provider's USDC account, regardless",
+            "of who signed. This is what makes consumer-initiated settle safe."
+          ],
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "job_id",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "result_hash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "slash_provider",
+      "discriminator": [
+        169,
+        166,
+        85,
+        0,
+        111,
+        175,
+        215,
+        187
+      ],
+      "accounts": [
+        {
+          "name": "consumer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "job_escrow",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  106,
+                  111,
+                  98
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "consumer"
+              },
+              {
+                "kind": "arg",
+                "path": "job_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "provider_record",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  118,
+                  105,
+                  100,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "provider_record.authority",
+                "account": "ProviderRecord"
+              }
+            ]
+          }
+        },
+        {
+          "name": "job_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  106,
+                  111,
+                  98,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "consumer"
+              },
+              {
+                "kind": "arg",
+                "path": "job_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "stake_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  107,
+                  101,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "job_escrow.provider",
+                "account": "JobEscrow"
+              }
+            ]
+          }
+        },
+        {
+          "name": "consumer_token_account",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "job_id",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "update_provider",
+      "discriminator": [
+        52,
+        208,
+        141,
+        191,
+        164,
+        54,
+        108,
+        150
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "provider_record"
+          ]
+        },
+        {
+          "name": "provider_record",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  118,
+                  105,
+                  100,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "qvac_pubkey",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "models",
+          "type": {
+            "vec": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        },
+        {
+          "name": "price_per_1k",
+          "type": "u64"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "JobEscrow",
+      "discriminator": [
+        189,
+        224,
+        160,
+        70,
+        105,
+        78,
+        115,
+        151
+      ]
+    },
+    {
+      "name": "ProviderRecord",
+      "discriminator": [
+        137,
+        14,
+        127,
+        97,
+        57,
+        81,
+        55,
+        210
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "ProviderInactive",
+      "msg": "Provider is not active"
+    },
+    {
+      "code": 6001,
+      "name": "TooManyModels",
+      "msg": "Too many models — max 8"
+    },
+    {
+      "code": 6002,
+      "name": "ZeroStake",
+      "msg": "Stake amount must be greater than zero"
+    },
+    {
+      "code": 6003,
+      "name": "JobNotLocked",
+      "msg": "Job is not in Locked state"
+    },
+    {
+      "code": 6004,
+      "name": "UnauthorizedProvider",
+      "msg": "Only the assigned provider can settle this job"
+    },
+    {
+      "code": 6005,
+      "name": "UnauthorizedSettler",
+      "msg": "Only the consumer or assigned provider can settle this job"
+    },
+    {
+      "code": 6006,
+      "name": "UnauthorizedConsumer",
+      "msg": "Only the consumer can slash this job"
+    },
+    {
+      "code": 6007,
+      "name": "InsufficientStake",
+      "msg": "Insufficient stake to cover slash"
+    }
+  ],
+  "types": [
+    {
+      "name": "JobEscrow",
+      "docs": [
+        "Escrow account locking USDC for one inference job."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "consumer",
+            "docs": [
+              "Consumer who locked the funds."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "provider",
+            "docs": [
+              "Provider this job is assigned to."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "docs": [
+              "Locked USDC amount (token lamports)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "result_hash",
+            "docs": [
+              "SHA-256 hash of the expected result, set by provider at settle time."
+            ],
+            "type": {
+              "option": {
+                "array": [
+                  "u8",
+                  32
+                ]
+              }
+            }
+          },
+          {
+            "name": "state",
+            "docs": [
+              "Job state."
+            ],
+            "type": {
+              "defined": {
+                "name": "JobState"
+              }
+            }
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump for PDA derivation."
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "JobState",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Locked"
+          },
+          {
+            "name": "Settled"
+          },
+          {
+            "name": "Slashed"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProviderRecord",
+      "docs": [
+        "On-chain record for a registered GPU provider."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "docs": [
+              "The provider's wallet / authority (can deregister, receive payment)."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "qvac_pubkey",
+            "docs": [
+              "QVAC P2P public key (hex string, 64 chars → stored as 32 bytes)."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "models",
+            "docs": [
+              "Models this provider supports (up to 8, each a 32-byte hash/id)."
+            ],
+            "type": {
+              "vec": {
+                "array": [
+                  "u8",
+                  32
+                ]
+              }
+            }
+          },
+          {
+            "name": "price_per_1k",
+            "docs": [
+              "Price in USDC micro-units per 1 000 tokens."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "stake_amount",
+            "docs": [
+              "Amount of USDC staked (lamports of token, 6 decimals)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "active",
+            "docs": [
+              "Whether the provider is currently active."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump for PDA derivation."
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ],
+  "constants": [
+    {
+      "name": "SEED",
+      "type": "string",
+      "value": "\"anchor\""
+    }
+  ]
+}

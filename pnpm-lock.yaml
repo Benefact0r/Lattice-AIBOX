@@ -93,7 +93,7 @@ importers:
 
   packages/web-api:
     dependencies:
-      '@lattice/sdk':
+      '@lattice-sdk-publish/sdk':
         specifier: workspace:*
         version: link:../sdk
       '@solana/spl-token':
