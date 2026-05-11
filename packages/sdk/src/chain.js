@@ -6,7 +6,7 @@ import anchor from '@coral-xyz/anchor'
 const { AnchorProvider, Program, Wallet } = anchor
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const idlPath = path.resolve(__dirname, '../../idl/lattice.json')
+const idlPath = path.resolve(__dirname, './idl/lattice.json')
 const idl = JSON.parse(readFileSync(idlPath, 'utf8'))
 
 export function buildChainClient({ rpcUrl, keypair, programId }) {

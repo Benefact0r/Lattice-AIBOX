@@ -1,16 +1,45 @@
-{
-  "name": "@lattice/sdk",
-  "version": "0.0.1",
-  "type": "module",
-  "main": "src/index.js",
-  "scripts": {
-    "dev": "node src/index.js"
-  },
-  "dependencies": {
-    "@coral-xyz/anchor": "^0.32.1",
-    "@qvac/sdk": "^0.10.2",
-    "@solana/spl-token": "^0.4.14",
-    "@solana/web3.js": "^1.98.4",
-    "dotenv": "^17.4.2"
-  }
+﻿{
+    "name":  "@lattice-sdk-publish/sdk",
+    "version":  "0.1.0",
+    "description":  "Lattice — decentralized AI inference marketplace on Solana. Pay per-token, privacy-first via Hinkal Protocol.",
+    "type":  "module",
+    "main":  "src/index.js",
+    "exports":  {
+                    ".":  "./src/index.js"
+                },
+    "files":  [
+                  "src"
+              ],
+    "keywords":  [
+                     "lattice",
+                     "ai",
+                     "inference",
+                     "solana",
+                     "decentralized",
+                     "gpu",
+                     "llm",
+                     "qvac",
+                     "hinkal",
+                     "privacy",
+                     "web3"
+                 ],
+    "license":  "MIT",
+    "repository":  {
+                       "type":  "git",
+                       "url":  "https://github.com/Benefact0r/Lattice-AIBOX.git"
+                   },
+    "homepage":  "https://lattice-aibox-web.vercel.app",
+    "publishConfig":  {
+                          "access":  "public"
+                      },
+    "scripts":  {
+                    "dev":  "node src/index.js"
+                },
+    "dependencies":  {
+                         "@coral-xyz/anchor":  "^0.32.1",
+                         "@qvac/sdk":  "^0.10.2",
+                         "@solana/spl-token":  "^0.4.14",
+                         "@solana/web3.js":  "^1.98.4",
+                         "dotenv":  "^17.4.2"
+                     }
 }
