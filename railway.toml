@@ -4,6 +4,8 @@ buildCommand = "npm install -g pnpm && pnpm install"
 
 [deploy]
 restartPolicyType = "on_failure"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 60
 
 [nixpacks]
 node_version = "20"
